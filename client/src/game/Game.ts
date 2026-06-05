@@ -74,6 +74,7 @@ export class Game {
 
     this.detachInput = this.keyboard.attach();
     window.addEventListener('resize', this.resize);
+    document.addEventListener('visibilitychange', this.onVisibility);
   }
 
   start(): void {
@@ -163,6 +164,11 @@ export class Game {
     this.renderer.render(this.scene, this.camera);
   }
 
+  private onVisibility = (): void => {
+    if (document.hidden) { this.running = false; cancelAnimationFrame(this.raf); }
+    else if (!this.running) { this.running = true; this.last = performance.now(); this.start(); }
+  };
+
   private resize = (): void => {
     const w = this.canvas.clientWidth || window.innerWidth;
     const h = this.canvas.clientHeight || window.innerHeight;
@@ -178,6 +184,7 @@ export class Game {
     cancelAnimationFrame(this.raf);
     this.detachInput();
     window.removeEventListener('resize', this.resize);
+    document.removeEventListener('visibilitychange', this.onVisibility);
     this.renderer.dispose();
   }
 }
