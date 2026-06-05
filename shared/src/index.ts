@@ -3,4 +3,4 @@ export * from './constants.js';
 export * from './math.js';
 export * from './map.js';
 export * from './carSim.js';
-export * from './collision.js';
+// export * from './collision.js'; // restored in Task 9
