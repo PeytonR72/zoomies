@@ -140,11 +140,13 @@ export class Game {
   private render(now: number): void {
     this.carMesh.group.position.set(this.car.x, 0, this.car.z);
     this.carMesh.group.rotation.y = this.car.heading;
-    // derive lateral speed for a subtle visual lean
-    const fx = Math.sin(this.car.heading);
-    const fz = Math.cos(this.car.heading);
-    const lateral = this.car.vx * fz - this.car.vz * fx;
-    this.carMesh.group.rotation.z = -lateral * 0.02;
+    // derive lateral speed for a subtle visual lean (skip if reduced-motion preferred)
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const fx = Math.sin(this.car.heading);
+      const fz = Math.cos(this.car.heading);
+      const lateral = this.car.vx * fz - this.car.vz * fx;
+      this.carMesh.group.rotation.z = -lateral * 0.02;
+    }
 
     const renderTime = now - INTERP_DELAY_MS;
     for (const [id, r] of this.remotes) {

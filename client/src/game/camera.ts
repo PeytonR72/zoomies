@@ -28,10 +28,12 @@ export function updateCamera(cam: THREE.PerspectiveCamera, carX: number, carZ: n
   cam.position.x += (pos.x - cam.position.x) * FOLLOW_LERP;
   cam.position.y += (pos.y - cam.position.y) * FOLLOW_LERP;
   cam.position.z += (pos.z - cam.position.z) * FOLLOW_LERP;
-  const targetFov = 45 + clamp(speed / 42, 0, 1) * 7;
-  if (Math.abs(cam.fov - targetFov) > 0.05) {
-    cam.fov += (targetFov - cam.fov) * 0.1;
-    cam.updateProjectionMatrix();
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const targetFov = 45 + clamp(speed / 42, 0, 1) * 7;
+    if (Math.abs(cam.fov - targetFov) > 0.05) {
+      cam.fov += (targetFov - cam.fov) * 0.1;
+      cam.updateProjectionMatrix();
+    }
   }
   cam.lookAt(look.x, look.y, look.z);
 }
