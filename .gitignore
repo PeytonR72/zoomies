@@ -31,3 +31,6 @@ Thumbs.db
 
 # Test / coverage
 coverage/
+
+# TS incremental build info
+*.tsbuildinfo
