@@ -6,3 +6,4 @@ export * from './carSim.js';
 export * from './collision.js';
 export * from './protocol.js';
 export * from './roomCode.js';
+export * from './validation.js';
