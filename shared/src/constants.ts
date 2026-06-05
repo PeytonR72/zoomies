@@ -46,3 +46,33 @@ export const PLAYER_COLORS = [
   '#a463f2', // purple
   '#ff924d', // orange
 ] as const;
+
+// ---- Visual / art-direction (cosmetic, but centralized like everything else) ----
+export const WORLD_SEED = 1337; // master seed for all deterministic world generation
+
+export const PALETTE = {
+  skyTop: '#3aa0ff',
+  skyHorizon: '#bfe9ff',
+  sun: '#fff3d6',
+  grassLow: '#4f9e3a',
+  grassHigh: '#79c45a',
+  rock: '#8a8f99',
+  snow: '#f3f7ff',
+  sand: '#e8d9a8',
+  waterDeep: '#1b6fa8',
+  waterShallow: '#56c3d6',
+  waterFoam: '#dffaff',
+  road: '#3a3f4a',
+} as const;
+
+// Scatter (Stage 5): density + exclusion margins (world units).
+export const SCATTER_TARGET_COUNT = 220; // candidate props before exclusion
+export const SCATTER_ROAD_MARGIN = 6; // keep props this far from the road edge
+export const SCATTER_WATER_MARGIN = 3; // and this far from lake edges
+
+// Terrain (Stage 3): hill ring around the flat basin.
+// MUST be >= world bounds half-extents (200 x 150) so the ENTIRE drivable area is
+// flat (height 0) and cars never float; hills only rise beyond where cars can drive.
+export const BASIN_HALF_X = 210;
+export const BASIN_HALF_Z = 160;
+export const HILL_MAX_HEIGHT = 60;
