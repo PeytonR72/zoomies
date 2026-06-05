@@ -1,1 +1,8 @@
-{ "name": "@zoomies/party", "version": "0.0.0", "type": "module", "private": true }
+{
+  "name": "@zoomies/party",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": { "@zoomies/shared": "*" },
+  "devDependencies": { "partykit": "^0.0.111" }
+}
