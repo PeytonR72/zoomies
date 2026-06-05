@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { clamp } from '@zoomies/shared';
 
 // Angled top-down: high up and pulled back along −Z so we look down at a tilt.
 // CAMERA_BACK/HEIGHT chosen so the frame covers ~the red-rectangle area.
@@ -22,10 +23,15 @@ export function makeCamera(aspect: number): THREE.PerspectiveCamera {
 }
 
 /** Smoothly move the camera toward following the car at (x,z). */
-export function updateCamera(cam: THREE.PerspectiveCamera, carX: number, carZ: number): void {
+export function updateCamera(cam: THREE.PerspectiveCamera, carX: number, carZ: number, speed = 0): void {
   const { pos, look } = cameraTarget(carX, carZ);
   cam.position.x += (pos.x - cam.position.x) * FOLLOW_LERP;
   cam.position.y += (pos.y - cam.position.y) * FOLLOW_LERP;
   cam.position.z += (pos.z - cam.position.z) * FOLLOW_LERP;
+  const targetFov = 45 + clamp(speed / 42, 0, 1) * 7;
+  if (Math.abs(cam.fov - targetFov) > 0.05) {
+    cam.fov += (targetFov - cam.fov) * 0.1;
+    cam.updateProjectionMatrix();
+  }
   cam.lookAt(look.x, look.y, look.z);
 }
