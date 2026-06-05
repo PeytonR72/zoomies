@@ -16,6 +16,7 @@ export function Hud({ net, code }: { net: NetClient; code: string }) {
     };
     return () => {
       net.onRoster = undefined;
+      net.onStatus = prevStatus;
     };
   }, [net]);
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { stepCar, spawnCar, speed } from './carSim.js';
-import { MAX_SPEED, FIXED_DT, GRIP_ROAD, GRIP_GRASS } from './constants.js';
+import { MAX_SPEED, FIXED_DT } from './constants.js';
 import type { InputState } from './types.js';
 
 const THROTTLE: InputState = { throttle: true, brake: false, left: false, right: false };

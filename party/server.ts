@@ -30,6 +30,7 @@ export default class ZoomiesServer implements Party.Server {
     if (!msg || !('t' in msg)) return;
 
     if (msg.t === 'join') {
+      if (typeof msg.name !== 'string' || typeof msg.color !== 'string') return;
       if (this.players.size >= MAX_PLAYERS && !this.players.has(sender.id)) {
         sender.send(encode({ t: 'full' }));
         sender.close();
@@ -48,6 +49,7 @@ export default class ZoomiesServer implements Party.Server {
     }
 
     if (msg.t === 'state') {
+      if (!msg.car || typeof msg.car.x !== 'number' || typeof msg.car.z !== 'number') return;
       if (!this.players.has(sender.id)) return; // must join first
       const prev = this.states.get(sender.id) ?? null;
       const { state, corrected } = validateState(prev, msg.car);
