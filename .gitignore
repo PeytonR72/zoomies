@@ -34,3 +34,6 @@ coverage/
 
 # TS incremental build info
 *.tsbuildinfo
+
+# Playwright MCP artifacts
+.playwright-mcp/
