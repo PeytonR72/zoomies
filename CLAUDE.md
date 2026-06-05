@@ -40,6 +40,37 @@ so they can never drift. Never hardcode a physics/network number in client or pa
   bundler resolution; keep them even though files are `.ts`.
 - Commit per task; keep commits small.
 
+## Networking (Plan 2)
+- Hybrid authority: each client simulates its OWN car (`stepCar`) and sends state at
+  `SEND_RATE_HZ`. The PartyKit room (`party/server.ts`) validates with the SHARED
+  `validateState` (clamp bounds, clamp speed, reject teleports), stores per-player
+  state, and broadcasts `snapshot`s at `SNAPSHOT_RATE_HZ`.
+- Remotes render from `Interpolator` (`client/src/game/remote.ts`) sampled
+  `INTERP_DELAY_MS` in the past, using local arrival time as the clock (no server
+  clock sync needed). NEVER interpolate the local car — it's the local sim, corrected
+  only by an explicit `correction` message.
+- Soft-bump: each client moves only its OWN car (`resolveCircle` against remotes'
+  interpolated positions). No networked collision resolution.
+- Wire protocol lives in `shared/src/protocol.ts` (`encode`/`decode`, message union).
+  `decode` validates the message TAG only — `party/server.ts` guards payload shape
+  before use. One PartyKit room == one lobby, addressed by the room code (`generateRoomCode`).
+
+## Run multiplayer locally
+- Terminal A: `npm run dev:party` (PartyKit on 127.0.0.1:1999)
+- Terminal B: `npm run dev` (client on :5173)
+- `client/.env` sets `VITE_PARTYKIT_HOST` (defaults to 127.0.0.1:1999 in dev).
+
+## Deploy
+- Server: `npm run deploy:party` (PartyKit cloud) → records host `zoomies.<user>.partykit.dev`.
+- Client: `npx vercel --prod`; set `VITE_PARTYKIT_HOST` to the PartyKit host via
+  `npx vercel env add VITE_PARTYKIT_HOST production`. Build output is `client/dist`.
+
+## Future hooks (intentionally present, unused)
+- Laps/race: `MAP.roadCenterline` (spline) + `MAP.checkpoints` (ordered) are stored.
+- Drifting: lateral-velocity + per-surface `GRIP_*` in `carSim`/`constants` — lower
+  grip = more slide; a handbrake/powerup just lowers grip.
+
 ## Status
 - Plan 1 (foundation + single-player): see `docs/superpowers/plans/2026-06-04-zoomies-foundation.md`
 - Plan 2 (multiplayer + deploy + polish): see `docs/superpowers/plans/2026-06-04-zoomies-multiplayer.md`
+- Built + locally verified (two-client). Deploy (Plan 2 Tasks 12-13) pending user login.
