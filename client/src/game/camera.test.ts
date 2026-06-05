@@ -12,6 +12,6 @@ describe('cameraTarget', () => {
   it('follows the car position', () => {
     const { pos } = cameraTarget(100, 50);
     expect(pos.x).toBeCloseTo(100);
-    expect(pos.z).toBeCloseTo(50 - 40); // offset back from the car
+    expect(pos.z).toBeCloseTo(50 - 52); // offset back from the car (CAMERA_BACK)
   });
 });

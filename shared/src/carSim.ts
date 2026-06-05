@@ -48,7 +48,9 @@ export function stepCar(car: CarState, input: InputState, surface: Surface, dt: 
   forward = clamp(forward, -MAX_REVERSE_SPEED, MAX_SPEED);
 
   // Steering: authority scales with speed; flips when reversing.
-  const steerInput = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  // With the camera behind the car (looking +Z), screen-right is −X, so steering
+  // right must DECREASE heading — hence left − right, not right − left.
+  const steerInput = (input.left ? 1 : 0) - (input.right ? 1 : 0);
   const spd = Math.hypot(car.vx, car.vz);
   if (steerInput !== 0 && spd > 0.2) {
     const authority = Math.min(spd, STEER_FULL_SPEED) / STEER_FULL_SPEED;

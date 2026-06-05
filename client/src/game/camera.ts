@@ -3,8 +3,8 @@ import { clamp, MAX_SPEED } from '@zoomies/shared';
 
 // Angled top-down: high up and pulled back along −Z so we look down at a tilt.
 // CAMERA_BACK/HEIGHT chosen so the frame covers ~the red-rectangle area.
-const CAMERA_HEIGHT = 58;
-const CAMERA_BACK = 40;
+const CAMERA_HEIGHT = 75;
+const CAMERA_BACK = 52;
 const FOLLOW_LERP = 0.12; // smoothing per frame
 
 export function cameraTarget(carX: number, carZ: number) {

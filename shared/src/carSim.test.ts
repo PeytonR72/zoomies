@@ -50,6 +50,20 @@ describe('carSim steering + slip', () => {
     expect(Math.abs(car.heading)).toBeGreaterThan(0.1);
   });
 
+  it('steering right turns the car toward screen-right (−X with our camera)', () => {
+    // heading 0 faces +Z; the camera sits behind at −Z, so screen-right is −X.
+    // Driving forward + right must yaw the forward vector toward −X (sin(heading) < 0).
+    let right = spawnCar(0, 0, 0);
+    for (let i = 0; i < Math.round(1 / FIXED_DT); i++) right = stepCar(right, FWD_RIGHT, 'road', FIXED_DT);
+    expect(Math.sin(right.heading)).toBeLessThan(0);
+
+    // ...and steering left mirrors it (toward +X).
+    const FWD_LEFT: InputState = { throttle: true, brake: false, left: true, right: false };
+    let left = spawnCar(0, 0, 0);
+    for (let i = 0; i < Math.round(1 / FIXED_DT); i++) left = stepCar(left, FWD_LEFT, 'road', FIXED_DT);
+    expect(Math.sin(left.heading)).toBeGreaterThan(0);
+  });
+
   it('grass retains more lateral velocity than road (slides more)', () => {
     // Seed a pure sideways velocity and let one step bleed it.
     const seed = { x: 0, z: 0, heading: 0, vx: 8, vz: 0 };
