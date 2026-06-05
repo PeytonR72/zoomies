@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { clamp } from '@zoomies/shared';
+import { clamp, MAX_SPEED } from '@zoomies/shared';
 
 // Angled top-down: high up and pulled back along −Z so we look down at a tilt.
 // CAMERA_BACK/HEIGHT chosen so the frame covers ~the red-rectangle area.
@@ -29,7 +29,7 @@ export function updateCamera(cam: THREE.PerspectiveCamera, carX: number, carZ: n
   cam.position.y += (pos.y - cam.position.y) * FOLLOW_LERP;
   cam.position.z += (pos.z - cam.position.z) * FOLLOW_LERP;
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const targetFov = 45 + clamp(speed / 42, 0, 1) * 7;
+    const targetFov = 45 + clamp(speed / MAX_SPEED, 0, 1) * 7;
     if (Math.abs(cam.fov - targetFov) > 0.05) {
       cam.fov += (targetFov - cam.fov) * 0.1;
       cam.updateProjectionMatrix();
