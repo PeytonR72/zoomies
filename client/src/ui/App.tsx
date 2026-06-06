@@ -3,9 +3,11 @@ import { generateRoomCode } from '@zoomies/shared';
 import { StartScreen, type StartChoice } from './StartScreen.js';
 import { GameCanvas } from './GameCanvas.js';
 import { Hud } from './Hud.js';
+import { LoadingScreen } from './LoadingScreen.js';
 import { NetClient, type NetStatus } from '../net/client.js';
+import { preloadAssets } from '../game/assets.js';
 
-type Phase = 'menu' | 'playing' | 'full';
+type Phase = 'menu' | 'loading' | 'playing' | 'full';
 
 export function App() {
   const [phase, setPhase] = useState<Phase>('menu');
@@ -25,7 +27,8 @@ export function App() {
     netRef.current = net;
     setChoice(c);
     setCode(room);
-    setPhase('playing');
+    setPhase('loading');
+    preloadAssets().then(() => setPhase('playing'));
   };
 
   useEffect(() => () => netRef.current?.close(), []);
@@ -39,6 +42,10 @@ export function App() {
         </div>
       </div>
     );
+  }
+
+  if (phase === 'loading') {
+    return <LoadingScreen />;
   }
 
   if (phase === 'playing' && choice && netRef.current) {
