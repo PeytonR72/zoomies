@@ -66,7 +66,10 @@ export class Game {
     // antialias: false — SMAAEffect in the post-processing pipeline handles AA;
     // native MSAA is redundant and conflicts with postprocessing's FBO management.
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    // Cap at 1.5: on HiDPI displays a 2.0 ratio renders ~4x the pixels and every
+    // post-fx fullscreen pass pays that fill cost. 1.5 is ~invisible on this low-poly
+    // art but a big fragment-work saving — extra FPS headroom on weak GPUs.
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.resize();
