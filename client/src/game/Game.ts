@@ -60,7 +60,9 @@ export class Game {
     opts: GameOptions,
   ) {
     this.net = opts.net;
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    // antialias: false — SMAAEffect in the post-processing pipeline handles AA;
+    // native MSAA is redundant and conflicts with postprocessing's FBO management.
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
