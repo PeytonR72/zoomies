@@ -2,11 +2,13 @@ import * as THREE from 'three';
 import { MAP, PALETTE } from '@zoomies/shared';
 import { addLighting } from './lighting.js';
 import { createSky, createSunMesh } from './sky.js';
+import { createWater, type Water } from './water.js';
 import type { Quality } from './settings.js';
 
 export interface World {
   scene: THREE.Scene;
   sun: THREE.Mesh; // god-ray source
+  water: Water;
 }
 
 export function createWorld(quality: Quality): World {
@@ -30,7 +32,9 @@ export function createWorld(quality: Quality): World {
   scene.add(ground);
   scene.add(buildRoadMesh());
   for (const p of MAP.props) scene.add(buildTree(p.x, p.z, p.radius));
-  return { scene, sun: sunMesh };
+  const water = createWater(quality === 'high');
+  scene.add(water.group);
+  return { scene, sun: sunMesh, water };
 }
 
 function buildRoadMesh(): THREE.Object3D {

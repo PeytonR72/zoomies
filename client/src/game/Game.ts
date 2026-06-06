@@ -22,6 +22,7 @@ import { makeCamera, updateCamera } from './camera.js';
 import { FixedStepper } from './loop.js';
 import { Keyboard } from './input.js';
 import { Interpolator } from './remote.js';
+import type { Water } from './water.js';
 import type { NetClient } from '../net/client.js';
 
 interface Remote {
@@ -50,6 +51,7 @@ export class Game {
   private postfx!: PostFX;
   private sun!: THREE.Mesh;
   private contact!: THREE.Mesh;
+  private water!: Water;
   private sendAcc = 0;
   private raf = 0;
   private last = 0;
@@ -72,6 +74,7 @@ export class Game {
     const world = createWorld(quality);
     this.scene = world.scene;
     this.sun = world.sun;
+    this.water = world.water;
     this.camera = makeCamera(canvas.clientWidth / canvas.clientHeight);
     this.postfx = createPostFX(this.renderer, this.scene, this.camera, world.sun, quality);
 
@@ -178,6 +181,7 @@ export class Game {
     }
 
     this.contact.position.set(this.car.x, 0.05, this.car.z);
+    this.water.update(now / 1000);
     updateCamera(this.camera, this.car.x, this.car.z, Math.hypot(this.car.vx, this.car.vz));
     this.postfx.render(0.016);
   }
