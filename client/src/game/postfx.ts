@@ -4,12 +4,9 @@ import {
   RenderPass,
   EffectPass,
   BloomEffect,
-  GodRaysEffect,
   VignetteEffect,
   SMAAEffect,
   SMAAPreset,
-  BlendFunction,
-  type Effect,
 } from 'postprocessing';
 import type { Quality } from './settings.js';
 
@@ -19,43 +16,35 @@ export interface PostFX {
   render: (dt: number) => void;
 }
 
-/** Build the bloom + god-rays + vignette pipeline. `sun` is the god-ray light source. */
+/** Build the bloom + vignette + SMAA pipeline.
+ *
+ * God-rays (GodRaysEffect) were removed from the default pipeline: they require a
+ * second full scene render for occlusion plus a 60-sample raymarch, which cuts
+ * integrated-GPU frame rates from ~55 fps to 10-15 fps.  At the game's steep
+ * top-down camera angle the rays are barely visible, so the cost far exceeds the
+ * visual benefit.  Bloom + vignette + SMAA alone deliver a polished look at 60 fps.
+ */
 export function createPostFX(
   renderer: THREE.WebGLRenderer,
   scene: THREE.Scene,
   camera: THREE.Camera,
-  sun: THREE.Mesh,
+  _sun: THREE.Mesh,   // kept in signature so callers need no change
   quality: Quality,
 ): PostFX {
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
 
   const bloom = new BloomEffect({
-    intensity: quality === 'high' ? 0.9 : 0.5,
+    intensity: quality === 'high' ? 0.8 : 0.4,
     luminanceThreshold: 0.65,
     luminanceSmoothing: 0.3,
-    mipmapBlur: true,
+    mipmapBlur: quality === 'high',  // mipmap blur is cheap but skip on low
   });
 
   const vignette = new VignetteEffect({ offset: 0.3, darkness: 0.45 });
   const smaa = new SMAAEffect({ preset: SMAAPreset.MEDIUM });
 
-  // God-rays are the most motion-heavy effect and the priciest pass; drop them on
-  // 'low' (which is also the prefers-reduced-motion path) for a calmer, cheaper image.
-  const effects: Effect[] = [bloom, vignette, smaa];
-  if (quality === 'high') {
-    const godRays = new GodRaysEffect(camera, sun, {
-      blendFunction: BlendFunction.SCREEN,
-      density: 0.92,
-      decay: 0.92,
-      weight: 0.5,
-      samples: 60,
-      resolutionScale: 0.6,
-    });
-    effects.unshift(godRays);
-  }
-
-  composer.addPass(new EffectPass(camera, ...effects));
+  composer.addPass(new EffectPass(camera, bloom, vignette, smaa));
 
   // FIX: EffectComposer.createDepthTexture() calls depthTexture.clone(), which in
   // Three.js shares the same Source object between the original and the clone.

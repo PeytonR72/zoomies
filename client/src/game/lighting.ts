@@ -10,7 +10,9 @@ export function addLighting(scene: THREE.Scene, quality: Quality): THREE.Directi
   const sun = new THREE.DirectionalLight(PALETTE.sun, 1.25);
   sun.position.set(120, 180, 80);
   sun.castShadow = true;
-  const s = quality === 'high' ? 2048 : 1024;
+  // 1024 is sufficient for the top-down camera; 2048 doubled the shadow-map fill cost
+  // with no visible quality gain at this viewing angle.
+  const s = quality === 'high' ? 1024 : 512;
   sun.shadow.mapSize.set(s, s);
   sun.shadow.camera.near = 10;
   sun.shadow.camera.far = 600;
