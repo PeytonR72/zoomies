@@ -8,3 +8,4 @@ export * from './collision.js';
 export * from './protocol.js';
 export * from './roomCode.js';
 export * from './validation.js';
+export * from './terrain.js';
