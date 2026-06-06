@@ -4,7 +4,13 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 const loader = new GLTFLoader();
 const cache = new Map<string, THREE.Group>();
 
-const URLS = { car: '/models/car.glb' } as const;
+const URLS = {
+  car: '/models/car.glb',
+  tree_a: '/models/tree_a.glb',
+  tree_b: '/models/tree_b.glb',
+  rock: '/models/rock.glb',
+  reed: '/models/reed.glb',
+} as const;
 export type AssetKey = keyof typeof URLS;
 
 /** Load all GLBs once. Resolves even if some fail (fallbacks used instead). */
