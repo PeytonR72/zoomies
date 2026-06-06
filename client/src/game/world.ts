@@ -4,6 +4,7 @@ import { addLighting } from './lighting.js';
 import { createSky, createSunMesh } from './sky.js';
 import { createWater, type Water } from './water.js';
 import { createTerrain } from './terrain.js';
+import { createScatter } from './scatter.js';
 import type { Quality } from './settings.js';
 
 export interface World {
@@ -24,7 +25,9 @@ export function createWorld(quality: Quality): World {
   // Terrain: low-poly heightfield (flat basin + hill ring).
   scene.add(createTerrain());
   scene.add(buildRoadMesh());
-  for (const p of MAP.props) scene.add(buildTree(p.x, p.z, p.radius));
+  // Scattered vegetation/rocks/reeds (instanced, from deterministic shared layout).
+  // createScatter() uses the loaded GLTF assets; called after preloadAssets() resolves.
+  scene.add(createScatter());
   const water = createWater(quality === 'high');
   scene.add(water.group);
   return { scene, sun: sunMesh, water };
@@ -52,21 +55,4 @@ function buildRoadMesh(): THREE.Object3D {
     group.add(joint);
   }
   return group;
-}
-
-function buildTree(x: number, z: number, radius: number): THREE.Object3D {
-  const g = new THREE.Group();
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius * 0.18, radius * 0.22, radius * 1.2, 6),
-    new THREE.MeshLambertMaterial({ color: '#7a4a2b' }),
-  );
-  trunk.position.y = radius * 0.6;
-  const leaves = new THREE.Mesh(
-    new THREE.ConeGeometry(radius, radius * 2.4, 7),
-    new THREE.MeshLambertMaterial({ color: '#2f9e44', flatShading: true }),
-  );
-  leaves.position.y = radius * 1.9;
-  g.add(trunk, leaves);
-  g.position.set(x, 0, z);
-  return g;
 }
