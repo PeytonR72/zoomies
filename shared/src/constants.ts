@@ -71,8 +71,9 @@ export const SCATTER_ROAD_MARGIN = 6; // keep props this far from the road edge
 export const SCATTER_WATER_MARGIN = 3; // and this far from lake edges
 
 // Terrain (Stage 3): hill ring around the flat basin.
-// MUST be >= world bounds half-extents (200 x 150) so the ENTIRE drivable area is
-// flat (height 0) and cars never float; hills only rise beyond where cars can drive.
-export const BASIN_HALF_X = 210;
-export const BASIN_HALF_Z = 160;
-export const HILL_MAX_HEIGHT = 60;
+// Set to the world bounds half-extents (200 x 150) so the ENTIRE drivable area is
+// flat (height 0) and cars never float (a car's center can't exceed bounds - CAR_RADIUS),
+// while hills begin right at the drivable edge so they read as a visible backdrop.
+export const BASIN_HALF_X = 200;
+export const BASIN_HALF_Z = 150;
+export const HILL_MAX_HEIGHT = 90;
