@@ -26,9 +26,15 @@ export function buildCar(color: string): CarMesh {
     if (area > bodyArea && mat && 'color' in mat) {
       bodyArea = area;
       body = mat.clone();
+      // Remove the atlas texture so the solid player color shows cleanly
+      body.map = null;
+      body.needsUpdate = true;
       m.material = body;
     }
   });
+  // Apply the initial color
+  body?.color.set(color);
+
   const group = new THREE.Group();
   group.add(gltf);
   return {
