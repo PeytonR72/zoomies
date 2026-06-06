@@ -65,6 +65,36 @@ so they can never drift. Never hardcode a physics/network number in client or pa
 - Client: `npx vercel --prod`; set `VITE_PARTYKIT_HOST` to the PartyKit host via
   `npx vercel env add VITE_PARTYKIT_HOST production`. Build output is `client/dist`.
 
+## Rendering & assets (visual overhaul)
+- `client/src/game/` render modules, with `world.ts` as the composition root that wires:
+  `lighting.ts` (warm sun + soft shadows + contact-shadow blob), `sky.ts` (gradient dome
+  + sun mesh), `postfx.ts` (EffectComposer: bloom + vignette + SMAA), `water.ts` (stylized
+  lake ShaderMaterial), `terrain.ts` (low-poly heightfield, flat basin + hill ring, mottled
+  grass), `assets.ts` (GLTFLoader + cache + `preloadAssets()` + procedural fallback),
+  `carModel.ts` (GLTF car + per-player body recolor), `scatter.ts` (InstancedMesh trees/
+  rocks/reeds from the seeded layout).
+- **Determinism rule (like the golden rule):** ALL world generation — terrain `heightAt`,
+  grass color noise, road spline (`roadPath`), scatter positions AND colors — is seeded in
+  `shared` via `WORLD_SEED`/`deriveSeed` + `mulberry32`. NEVER `Math.random()` per client,
+  so every player sees the identical world. Road is a closed Catmull-Rom spline
+  (`shared/src/spline.ts` → `MAP.roadPath`); `surfaceAt` measures distance to `roadPath`.
+- **Assets:** CC0 GLB models live in `client/public/models/` (Kenney Car Kit + Nature Kit);
+  provenance in `client/public/CREDITS.md`. Kenney's metallic PBR renders black with no
+  env-map, so `scatter.ts` rebuilds them as `MeshLambert` with the base color.
+- **Quality / a11y:** `settings.ts` `detectQuality()` → 'high'|'low' (low on reduced-motion
+  or low device-memory); 'low' skips bloom mipmap, shrinks shadow maps, and freezes water.
+  `prefers-reduced-motion` freezes all animation.
+- **Perf notes:** god-rays were REMOVED (a 2nd scene render + 60-sample raymarch dropped
+  integrated GPUs to ~10-15fps and barely showed at our top-down angle); pixelRatio capped
+  at 1.5; InstancedMesh for all scatter; pixel-ratio/shadow/post-fx are the main fill costs.
+  If re-adding god-rays, gate them behind an opt-in 'ultra' tier (the `_sun` param in
+  `postfx.ts` is the hook).
+- **Gotcha:** `postfx.ts` reaches into postprocessing internals (`composer.depthRenderTarget`)
+  to fix a depth-stencil blit alias — fragile across `postprocessing` upgrades; re-verify
+  no per-frame `glBlitFramebuffer` warnings after bumping that dep.
+- **Network quirks (this machine):** `curl --ssl-no-revoke`; git/vercel need
+  `NODE_OPTIONS=--use-system-ca` (cert-revocation checks are blocked).
+
 ## Future hooks (intentionally present, unused)
 - Laps/race: `MAP.roadCenterline` (spline) + `MAP.checkpoints` (ordered) are stored.
 - Drifting: lateral-velocity + per-surface `GRIP_*` in `carSim`/`constants` — lower
@@ -73,4 +103,6 @@ so they can never drift. Never hardcode a physics/network number in client or pa
 ## Status
 - Plan 1 (foundation + single-player): see `docs/superpowers/plans/2026-06-04-zoomies-foundation.md`
 - Plan 2 (multiplayer + deploy + polish): see `docs/superpowers/plans/2026-06-04-zoomies-multiplayer.md`
-- Built + locally verified (two-client). Deploy (Plan 2 Tasks 12-13) pending user login.
+- Visual overhaul (Tiny Skies): see `docs/superpowers/plans/2026-06-05-zoomies-visual-overhaul.md`
+- DEPLOYED: client → https://zoomies-liart.vercel.app, server → zoomies.peytonr72.partykit.dev.
+- On `main` after the visual overhaul branch (`feat/visual-overhaul`) merges.
