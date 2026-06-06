@@ -9,7 +9,7 @@ export type PropKind = 'tree' | 'rock' | 'reed';
 export interface ScatterProp { x: number; z: number; kind: PropKind; yaw: number; scale: number }
 
 function nearRoad(x: number, z: number, margin: number): boolean {
-  const pts = MAP.roadCenterline;
+  const pts = MAP.roadPath;
   for (let i = 0; i < pts.length; i++) {
     const a = pts[i]!;
     const b = pts[(i + 1) % pts.length]!;
