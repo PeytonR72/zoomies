@@ -39,3 +39,6 @@ coverage/
 # Playwright MCP artifacts
 .playwright-mcp/
 .vercel
+
+# Stray root-level screenshot artifacts
+/*.png
