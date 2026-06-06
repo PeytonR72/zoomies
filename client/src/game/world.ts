@@ -35,24 +35,50 @@ export function createWorld(quality: Quality): World {
 
 function buildRoadMesh(): THREE.Object3D {
   const group = new THREE.Group();
-  const mat = new THREE.MeshLambertMaterial({ color: PALETTE.road });
-  const pts = MAP.roadCenterline;
-  for (let i = 0; i < pts.length; i++) {
-    const a = pts[i]!;
-    const c = pts[(i + 1) % pts.length]!;
-    const dx = c.x - a.x;
-    const dz = c.z - a.z;
+  const mat = new THREE.MeshLambertMaterial({ color: PALETTE.road, side: THREE.DoubleSide });
+  const path = MAP.roadPath;
+  const n = path.length;
+  const hw = MAP.roadWidth / 2;
+
+  // Build one merged BufferGeometry ribbon (2 vertices per path point, one quad per segment).
+  const positions: number[] = [];
+  const indices: number[] = [];
+
+  for (let i = 0; i < n; i++) {
+    const a = path[i]!;
+    const b = path[(i + 1) % n]!;
+    const dx = b.x - a.x;
+    const dz = b.z - a.z;
     const len = Math.hypot(dx, dz);
-    const seg = new THREE.Mesh(new THREE.PlaneGeometry(MAP.roadWidth, len), mat);
-    seg.rotation.x = -Math.PI / 2;
-    seg.rotation.z = -Math.atan2(dz, dx) + Math.PI / 2;
-    seg.position.set((a.x + c.x) / 2, 0.02, (a.z + c.z) / 2);
-    group.add(seg);
-    // Round the corners with a disc so segments join cleanly.
-    const joint = new THREE.Mesh(new THREE.CircleGeometry(MAP.roadWidth / 2, 12), mat);
-    joint.rotation.x = -Math.PI / 2;
-    joint.position.set(a.x, 0.02, a.z);
-    group.add(joint);
+    // perpendicular (right-hand)
+    const px = (dz / len) * hw;
+    const pz = (-dx / len) * hw;
+
+    const base = i * 2;
+    // Left and right of point a
+    positions.push(a.x - px, 0.02, a.z - pz);
+    positions.push(a.x + px, 0.02, a.z + pz);
+
+    // quad: connect to NEXT pair (wraps to close the loop)
+    const nextBase = ((i + 1) % n) * 2;
+    indices.push(base, base + 1, nextBase + 1);
+    indices.push(base, nextBase + 1, nextBase);
   }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  group.add(new THREE.Mesh(geo, mat));
+
+  // Optional: thin dashed center line for charm.
+  const linePoints = path.map((p) => new THREE.Vector3(p.x, 0.04, p.z));
+  linePoints.push(linePoints[0]!); // close the loop
+  const lineGeo = new THREE.BufferGeometry().setFromPoints(linePoints);
+  const lineMat = new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 4, gapSize: 4, linewidth: 1 });
+  const line = new THREE.Line(lineGeo, lineMat);
+  line.computeLineDistances();
+  group.add(line);
+
   return group;
 }
