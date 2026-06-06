@@ -14,6 +14,9 @@ import {
 } from '@zoomies/shared';
 import { createWorld } from './world.js';
 import { buildCarMesh, type CarMesh } from './carMesh.js';
+import { detectQuality } from './settings.js';
+import { createPostFX, type PostFX } from './postfx.js';
+import { makeContactShadow } from './lighting.js';
 import { buildNameTag } from './nameTag.js';
 import { makeCamera, updateCamera } from './camera.js';
 import { FixedStepper } from './loop.js';
@@ -44,6 +47,9 @@ export class Game {
   private carMesh: CarMesh;
   private net: NetClient;
   private remotes = new Map<string, Remote>();
+  private postfx!: PostFX;
+  private sun!: THREE.Mesh;
+  private contact!: THREE.Mesh;
   private sendAcc = 0;
   private raf = 0;
   private last = 0;
@@ -56,16 +62,23 @@ export class Game {
     this.net = opts.net;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.resize();
 
-    const world = createWorld();
+    const quality = detectQuality();
+    const world = createWorld(quality);
     this.scene = world.scene;
+    this.sun = world.sun;
     this.camera = makeCamera(canvas.clientWidth / canvas.clientHeight);
+    this.postfx = createPostFX(this.renderer, this.scene, this.camera, world.sun, quality);
 
     const spawn = MAP.spawnPoints[Math.floor(Math.random() * MAP.spawnPoints.length)]!;
     this.car = spawnCar(spawn.x, spawn.z, 0);
     this.carMesh = buildCarMesh(opts.color);
     this.scene.add(this.carMesh.group);
+    this.contact = makeContactShadow();
+    this.scene.add(this.contact);
 
     this.net.onSnapshot = (states, arrival) => this.ingestSnapshot(states, arrival);
     this.net.onCorrection = (car) => {
@@ -162,8 +175,9 @@ export class Game {
       }
     }
 
+    this.contact.position.set(this.car.x, 0.05, this.car.z);
     updateCamera(this.camera, this.car.x, this.car.z, Math.hypot(this.car.vx, this.car.vz));
-    this.renderer.render(this.scene, this.camera);
+    this.postfx.render(0.016);
   }
 
   private onVisibility = (): void => {
@@ -179,6 +193,7 @@ export class Game {
       this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
     }
+    this.postfx?.setSize(w, h);
   };
 
   dispose(): void {
@@ -187,6 +202,7 @@ export class Game {
     this.detachInput();
     window.removeEventListener('resize', this.resize);
     document.removeEventListener('visibilitychange', this.onVisibility);
+    this.postfx.composer.dispose();
     this.renderer.dispose();
   }
 }

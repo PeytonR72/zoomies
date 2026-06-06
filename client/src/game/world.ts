@@ -1,44 +1,41 @@
 import * as THREE from 'three';
-import { MAP } from '@zoomies/shared';
+import { MAP, PALETTE } from '@zoomies/shared';
+import { addLighting } from './lighting.js';
+import { createSky, createSunMesh } from './sky.js';
+import type { Quality } from './settings.js';
 
 export interface World {
   scene: THREE.Scene;
+  sun: THREE.Mesh; // god-ray source
 }
 
-/** Build the static scene: sky, ground, road ribbon, props, lighting. */
-export function createWorld(): World {
+export function createWorld(quality: Quality): World {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#8fd0ff');
-  scene.fog = new THREE.Fog('#8fd0ff', 200, 600);
+  scene.fog = new THREE.Fog(PALETTE.skyHorizon, 260, 820);
 
-  // Lighting: soft ambient + a warm key light for the flat-shaded low-poly look.
-  scene.add(new THREE.HemisphereLight('#bfe3ff', '#4f7a3a', 0.9));
-  const sun = new THREE.DirectionalLight('#fff4e0', 1.1);
-  sun.position.set(80, 160, 60);
-  scene.add(sun);
+  scene.add(createSky());
+  const sunMesh = createSunMesh();
+  scene.add(sunMesh);
+  addLighting(scene, quality);
 
-  // Grass ground.
+  // Ground (kept; recolored). Road ribbon + trees stay for now (replaced in later stages).
   const b = MAP.bounds;
   const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(b.maxX - b.minX + 80, b.maxZ - b.minZ + 80),
-    new THREE.MeshLambertMaterial({ color: '#5fb84e' }),
+    new THREE.PlaneGeometry(b.maxX - b.minX + 400, b.maxZ - b.minZ + 400),
+    new THREE.MeshLambertMaterial({ color: PALETTE.grassLow }),
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.set((b.minX + b.maxX) / 2, 0, (b.minZ + b.maxZ) / 2);
+  ground.receiveShadow = true;
   scene.add(ground);
-
-  // Road: a thin extruded ribbon following the closed centerline.
   scene.add(buildRoadMesh());
-
-  // Props: simple low-poly trees (cone + trunk) at each prop circle.
   for (const p of MAP.props) scene.add(buildTree(p.x, p.z, p.radius));
-
-  return { scene };
+  return { scene, sun: sunMesh };
 }
 
 function buildRoadMesh(): THREE.Object3D {
   const group = new THREE.Group();
-  const mat = new THREE.MeshLambertMaterial({ color: '#3a3f4a' });
+  const mat = new THREE.MeshLambertMaterial({ color: PALETTE.road });
   const pts = MAP.roadCenterline;
   for (let i = 0; i < pts.length; i++) {
     const a = pts[i]!;
