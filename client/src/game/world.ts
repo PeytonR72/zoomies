@@ -3,6 +3,7 @@ import { MAP, PALETTE } from '@zoomies/shared';
 import { addLighting } from './lighting.js';
 import { createSky, createSunMesh } from './sky.js';
 import { createWater, type Water } from './water.js';
+import { createTerrain } from './terrain.js';
 import type { Quality } from './settings.js';
 
 export interface World {
@@ -20,16 +21,8 @@ export function createWorld(quality: Quality): World {
   scene.add(sunMesh);
   addLighting(scene, quality);
 
-  // Ground (kept; recolored). Road ribbon + trees stay for now (replaced in later stages).
-  const b = MAP.bounds;
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(b.maxX - b.minX + 400, b.maxZ - b.minZ + 400),
-    new THREE.MeshLambertMaterial({ color: PALETTE.grassLow }),
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.set((b.minX + b.maxX) / 2, 0, (b.minZ + b.maxZ) / 2);
-  ground.receiveShadow = true;
-  scene.add(ground);
+  // Terrain: low-poly heightfield (flat basin + hill ring).
+  scene.add(createTerrain());
   scene.add(buildRoadMesh());
   for (const p of MAP.props) scene.add(buildTree(p.x, p.z, p.radius));
   const water = createWater(quality === 'high');
