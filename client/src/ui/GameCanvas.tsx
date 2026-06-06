@@ -10,5 +10,12 @@ export function GameCanvas({ color, net }: { color: string; net: NetClient }) {
     game.start();
     return () => game.dispose();
   }, [color, net]);
-  return <canvas ref={ref} style={{ width: '100vw', height: '100vh', display: 'block' }} />;
+  return (
+    <canvas
+      ref={ref}
+      aria-label="Zoomies driving game"
+      role="img"
+      style={{ width: '100vw', height: '100vh', display: 'block' }}
+    />
+  );
 }

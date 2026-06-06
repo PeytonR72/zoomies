@@ -9,6 +9,7 @@ import {
   SMAAEffect,
   SMAAPreset,
   BlendFunction,
+  type Effect,
 } from 'postprocessing';
 import type { Quality } from './settings.js';
 
@@ -36,19 +37,25 @@ export function createPostFX(
     mipmapBlur: true,
   });
 
-  const godRays = new GodRaysEffect(camera, sun, {
-    blendFunction: BlendFunction.SCREEN,
-    density: 0.92,
-    decay: 0.92,
-    weight: quality === 'high' ? 0.5 : 0.3,
-    samples: quality === 'high' ? 60 : 30,
-    resolutionScale: quality === 'high' ? 0.6 : 0.4,
-  });
-
   const vignette = new VignetteEffect({ offset: 0.3, darkness: 0.45 });
   const smaa = new SMAAEffect({ preset: SMAAPreset.MEDIUM });
 
-  composer.addPass(new EffectPass(camera, godRays, bloom, vignette, smaa));
+  // God-rays are the most motion-heavy effect and the priciest pass; drop them on
+  // 'low' (which is also the prefers-reduced-motion path) for a calmer, cheaper image.
+  const effects: Effect[] = [bloom, vignette, smaa];
+  if (quality === 'high') {
+    const godRays = new GodRaysEffect(camera, sun, {
+      blendFunction: BlendFunction.SCREEN,
+      density: 0.92,
+      decay: 0.92,
+      weight: 0.5,
+      samples: 60,
+      resolutionScale: 0.6,
+    });
+    effects.unshift(godRays);
+  }
+
+  composer.addPass(new EffectPass(camera, ...effects));
 
   // FIX: EffectComposer.createDepthTexture() calls depthTexture.clone(), which in
   // Three.js shares the same Source object between the original and the clone.

@@ -43,7 +43,12 @@ export function Hud({ net, code }: { net: NetClient; code: string }) {
         </ul>
       </div>
       <div style={controls}>WASD / Arrows to drive</div>
-      <div style={{ ...statusDot, background: status === 'open' ? '#37d67a' : '#ff924d' }} />
+      <div
+        style={{ ...statusDot, background: status === 'open' ? '#37d67a' : '#ff924d' }}
+        role="status"
+        aria-label={status === 'open' ? 'Connected' : `Connection: ${status}`}
+        title={status === 'open' ? 'Connected' : `Connection: ${status}`}
+      />
     </div>
   );
 }

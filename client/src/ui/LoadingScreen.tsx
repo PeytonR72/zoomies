@@ -243,4 +243,8 @@ const keyframes = `
     0%, 100% { transform: translateY(0px) rotate(0deg); }
     50%       { transform: translateY(-12px) rotate(6deg); }
   }
+  @media (prefers-reduced-motion: reduce) {
+    /* Author !important overrides the inline animation declarations. */
+    * { animation: none !important; }
+  }
 `;
