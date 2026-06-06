@@ -19,6 +19,8 @@ export interface MapDef {
   roadWidth: number;
   /** Solid decorative obstacles (trees/rocks). */
   props: Circle[];
+  /** Lakes — solid (car is pushed out) and rendered as water. */
+  waterBodies: Circle[];
   /** Ordered checkpoints derived from the road; stored, not used yet. */
   checkpoints: Checkpoint[];
   /** Where new cars spawn (cycled by join order). */
@@ -48,6 +50,11 @@ export const MAP: MapDef = {
     { x: 70, z: -25, radius: 4 },
     { x: 110, z: 40, radius: 5 },
     { x: -110, z: -40, radius: 5 },
+  ],
+  waterBodies: [
+    { x: -70, z: 60, radius: 26 },
+    { x: 95, z: -55, radius: 22 },
+    { x: 140, z: 70, radius: 18 },
   ],
   checkpoints: centerline.map((p, index) => ({ x: p.x, z: p.z, radius: 10, index })),
   spawnPoints: [

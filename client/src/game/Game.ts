@@ -112,7 +112,7 @@ export class Game {
     const input = this.keyboard.state();
     const surface = surfaceAt(this.car.x, this.car.z);
     let next = stepCar(this.car, input, surface, FIXED_DT);
-    next = resolveCollisions(next, MAP.props);
+    next = resolveCollisions(next, [...MAP.props, ...MAP.waterBodies]);
     // Soft-bump: push only our own car out of remotes' interpolated positions.
     const renderTime = performance.now() - INTERP_DELAY_MS;
     for (const r of this.remotes.values()) {
