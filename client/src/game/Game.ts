@@ -49,13 +49,14 @@ export class Game {
   private net: NetClient;
   private remotes = new Map<string, Remote>();
   private postfx!: PostFX;
-  private sun!: THREE.Mesh;
   private contact!: THREE.Mesh;
   private water!: Water;
   private sendAcc = 0;
   private raf = 0;
   private last = 0;
   private running = false;
+  private _onContextLost!: (e: Event) => void;
+  private _onContextRestored!: () => void;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -70,10 +71,17 @@ export class Game {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.resize();
 
+    // Context-loss: prevent the browser from permanently discarding the context;
+    // stop the render loop so we don't try to render into a lost context.
+    // Full scene rebuild on restore is out of scope — just log.
+    this._onContextLost = (e: Event) => { e.preventDefault(); this.running = false; };
+    this._onContextRestored = () => { console.warn('[Game] WebGL context restored — reload to resume'); };
+    canvas.addEventListener('webglcontextlost', this._onContextLost);
+    canvas.addEventListener('webglcontextrestored', this._onContextRestored);
+
     const quality = detectQuality();
     const world = createWorld(quality);
     this.scene = world.scene;
-    this.sun = world.sun;
     this.water = world.water;
     this.camera = makeCamera(canvas.clientWidth / canvas.clientHeight);
     this.postfx = createPostFX(this.renderer, this.scene, this.camera, world.sun, quality);
@@ -208,7 +216,34 @@ export class Game {
     this.detachInput();
     window.removeEventListener('resize', this.resize);
     document.removeEventListener('visibilitychange', this.onVisibility);
+    this.canvas.removeEventListener('webglcontextlost', this._onContextLost);
+    this.canvas.removeEventListener('webglcontextrestored', this._onContextRestored);
+    // Traverse the scene and dispose all GPU resources before destroying the renderer.
+    this.scene.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.geometry) mesh.geometry.dispose();
+      const mats = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
+      for (const mat of mats) {
+        disposeTextures(mat as unknown as Record<string, unknown>);
+        (mat as THREE.Material).dispose();
+      }
+    });
     this.postfx.composer.dispose();
     this.renderer.dispose();
+  }
+}
+
+/** Dispose every texture slot on a material (map, normalMap, etc.). */
+function disposeTextures(mat: Record<string, unknown> | null | undefined): void {
+  if (!mat) return;
+  const slots = [
+    'map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap',
+    'aoMap', 'alphaMap', 'envMap', 'lightMap', 'bumpMap', 'displacementMap',
+  ];
+  for (const slot of slots) {
+    const tex = mat[slot];
+    if (tex && typeof (tex as THREE.Texture).dispose === 'function') {
+      (tex as THREE.Texture).dispose();
+    }
   }
 }
