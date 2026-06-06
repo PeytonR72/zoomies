@@ -1,6 +1,38 @@
 import * as THREE from 'three';
-import { scatterProps, type PropKind } from '@zoomies/shared';
+import { scatterProps, type PropKind, mulberry32, deriveSeed, WORLD_SEED } from '@zoomies/shared';
 import { instantiate } from './assets.js';
+
+// ---------------------------------------------------------------------------
+// Per-instance color palettes (deterministic, drives variety across clients).
+// ---------------------------------------------------------------------------
+
+/** Canopy hues: 3 greens + gold + warm orange-gold for autumn variety. */
+const CANOPY_PALETTE: THREE.Color[] = [
+  new THREE.Color('#4a9e30'), // deep green
+  new THREE.Color('#6abf4b'), // mid green
+  new THREE.Color('#85d45a'), // light green
+  new THREE.Color('#c8b832'), // golden-yellow
+  new THREE.Color('#d4883a'), // warm amber/autumn
+];
+
+/** A dark-enough canopy hue in HSL: hue 60-160° (green-yellow band) or orange (20-40°).
+ *  Used to detect whether a primitive is the canopy vs trunk. */
+function isCanopyColor(c: THREE.Color): boolean {
+  const hsl = { h: 0, s: 0, l: 0 };
+  c.getHSL(hsl);
+  // Greenish (hue 80-200°) or yellowish/warm (hue 40-80°) and reasonably saturated
+  return hsl.s > 0.2 && (hsl.h > 0.11 && hsl.h < 0.56);
+}
+
+/** Neutral stone colors for rocks. */
+const ROCK_COLORS: THREE.Color[] = [
+  new THREE.Color('#9a9590'), // warm grey
+  new THREE.Color('#8a8678'), // tan-grey
+  new THREE.Color('#b0a898'), // light stone
+];
+
+/** Reed/grass green. */
+const REED_COLOR = new THREE.Color('#5e9e3a');
 
 /** Build InstancedMeshes for scattered props from the deterministic layout. */
 export function createScatter(): THREE.Group {
@@ -13,6 +45,9 @@ export function createScatter(): THREE.Group {
   for (const p of scatterProps()) {
     byKind[p.kind].push({ x: p.x, z: p.z, yaw: p.yaw, scale: p.scale });
   }
+
+  // Deterministic RNG for per-instance color selection (same seed → same world on every client).
+  const colorRng = mulberry32(deriveSeed(WORLD_SEED, 'scattercolor'));
 
   const assetFor: Record<PropKind, string[]> = {
     tree: ['tree_a', 'tree_b'],
@@ -48,11 +83,28 @@ export function createScatter(): THREE.Group {
     const modelHeight = fullBox.max.y - fullBox.min.y;
     const baseScale = modelHeight > 0 ? targetHeights[kind] / modelHeight : 1;
 
-    // For each primitive, create an InstancedMesh with a Lambert material
-    // (the Kenney GLBs use metallic=1 PBR which renders black without IBL).
+    // Determine color role for this kind's primitives.
+    // We use the primitive's baseColor to classify it and choose an override palette.
     for (const prim of primitives) {
+      // Determine what override color (if any) to apply.
+      // For trees: canopy primitives get a varied palette color (white base + instance tint).
+      //            trunk primitives keep their brown baseColor unchanged.
+      // For rocks: all primitives get neutral stone colors (per-instance).
+      // For reeds: all primitives get grassy green (uniform).
+      const isTree = kind === 'tree';
+      const isCanopy = isTree && isCanopyColor(prim.baseColor);
+      const isRock = kind === 'rock';
+      const isReed = kind === 'reed';
+
+      // Decide base material color: white lets instanceColor show through faithfully.
+      let matColor: THREE.Color;
+      if (isCanopy) matColor = new THREE.Color(0xffffff);
+      else if (isRock) matColor = new THREE.Color(0xffffff);
+      else if (isReed) matColor = REED_COLOR.clone();
+      else matColor = prim.baseColor.clone(); // trunk — keep original brown
+
       const mat = new THREE.MeshLambertMaterial({
-        color: prim.baseColor,
+        color: matColor,
         flatShading: false,
       });
 
@@ -74,9 +126,19 @@ export function createScatter(): THREE.Group {
         // so multi-node models (trunk + leaves) are assembled correctly.
         const final = new THREE.Matrix4().multiplyMatrices(dummy.matrix, prim.localMatrix);
         inst.setMatrixAt(i, final);
+
+        // Apply per-instance color for varied canopy / stone palette.
+        if (isCanopy) {
+          const c = CANOPY_PALETTE[Math.floor(colorRng() * CANOPY_PALETTE.length)]!;
+          inst.setColorAt(i, c);
+        } else if (isRock) {
+          const c = ROCK_COLORS[Math.floor(colorRng() * ROCK_COLORS.length)]!;
+          inst.setColorAt(i, c);
+        }
       });
 
       inst.instanceMatrix.needsUpdate = true;
+      if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
       group.add(inst);
     }
   }
