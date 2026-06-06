@@ -32,14 +32,15 @@ export function buildCar(color: string): CarMesh {
       m.material = body;
     }
   });
-  // Apply the initial color
-  body?.color.set(color);
+  // Apply the initial color (cast needed: TS narrows `body` to never after callback)
+  const bodyMat = body as THREE.MeshStandardMaterial | null;
+  if (bodyMat) bodyMat.color.set(color);
 
   const group = new THREE.Group();
   group.add(gltf);
   return {
     group,
-    setColor: (hex: string) => body?.color.set(hex),
+    setColor: (hex: string) => { if (bodyMat) bodyMat.color.set(hex); },
   };
 }
 
