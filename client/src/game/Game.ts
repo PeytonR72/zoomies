@@ -13,7 +13,7 @@ import {
   type CarState,
 } from '@zoomies/shared';
 import { createWorld } from './world.js';
-import { buildCarMesh, type CarMesh } from './carMesh.js';
+import { buildCar, type CarMesh } from './carModel.js';
 import { detectQuality } from './settings.js';
 import { createPostFX, type PostFX } from './postfx.js';
 import { makeContactShadow } from './lighting.js';
@@ -80,7 +80,7 @@ export class Game {
 
     const spawn = MAP.spawnPoints[Math.floor(Math.random() * MAP.spawnPoints.length)]!;
     this.car = spawnCar(spawn.x, spawn.z, 0);
-    this.carMesh = buildCarMesh(opts.color);
+    this.carMesh = buildCar(opts.color);
     this.scene.add(this.carMesh.group);
     this.contact = makeContactShadow();
     this.scene.add(this.contact);
@@ -146,7 +146,7 @@ export class Game {
   private spawnRemote(id: string): Remote | undefined {
     const info = this.net.players.get(id);
     if (!info) return undefined;
-    const mesh = buildCarMesh(info.color);
+    const mesh = buildCar(info.color);
     const tag = buildNameTag(info.name, info.color);
     mesh.group.add(tag);
     this.scene.add(mesh.group);
